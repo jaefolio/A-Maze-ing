@@ -1,0 +1,24 @@
+# ==========================================
+# A-Maze-ing Configuration File
+# ==========================================
+
+# Notice the empty lines below. The parser must ignore them.
+
+
+
+WIDTH = 20
+HEIGHT=15
+
+# Coordinates format is x,y
+ENTRY=0,0
+EXIT= 19,14  
+
+# Output settings
+OUTPUT_FILE=maze.txt
+PERFECT=False
+
+# ==========================================
+# Optional/Garbage values the user might add
+# ==========================================
+SEED=42
+RANDOM_EXTRA_SETTING = true
