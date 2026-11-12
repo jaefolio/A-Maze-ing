@@ -4,7 +4,7 @@ NORTH = 1       # 0001
 EAST = 2        # 0010
 SOUTH = 4       # 0100
 WEST = 8        # 1000
-ALL_WALLS = 15  # 01111
+ALL_WALLS = 15  # 1111
 
 
 @dataclass

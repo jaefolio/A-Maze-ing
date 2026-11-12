@@ -4,6 +4,14 @@ from maze import Maze
 
 Cell = tuple[int, int]
 
+PATTERN_42 = (
+    "#...###",
+    "#.....#",
+    "###.###",
+    "..#.#..",
+    "..#.###",
+)
+
 
 class MazeGenerator:
     def __init__(
@@ -103,3 +111,25 @@ class MazeGenerator:
 
         self._carve_tree(maze, parent)
         return maze
+
+    def _create_42_pattern(self) -> set[Cell]:
+        blocked = set()
+
+        if self.width < 9 or self.height < 7:
+            print("Warning: Maze too small for the 42 pattern")
+            return blocked
+
+        pattern_height = len(PATTERN_42)
+        pattern_width = len(PATTERN_42[0])
+
+        start_x = (self.width - pattern_width) // 2
+        start_y = (self.height - pattern_height) // 2
+
+        for dy, row in enumerate(PATTERN_42):
+            for dx, char in enumerate(row):
+                if char == "#":
+                    x = start_x + dx
+                    y = start_y + dy
+                    blocked.add((x, y))
+
+        return blocked

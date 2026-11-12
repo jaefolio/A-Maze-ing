@@ -1,13 +1,16 @@
-
+import validator
 from generator import MazeGenerator
-
-generator = MazeGenerator(
-    width=3,
-    height=3,
-    seed=42,
+from maze import Maze, EAST
+maze = Maze(
+    width=2,
+    height=2,
+    walls=[[15, 15], [15, 15]],
+    blocked=set(),
+    entry_point=(0, 0),
+    exit_point=(1, 1),
 )
 
-maze = generator.generate()
+# Open only the east wall of (0, 0)
+maze.walls[0][0] &= ~EAST
 
-for row in maze.walls:
-    print("".join(f"{cell:X}" for cell in row))
+print(validator.validate_walls(maze))
