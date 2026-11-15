@@ -1,4 +1,3 @@
-from collections import deque
 from dataclasses import dataclass
 
 
@@ -20,6 +19,18 @@ class Maze:
 
 
 def solve_maze(maze: Maze):
-	queue = deque([maze.entry_point])
-    visited = maze.entry_point
+    queue: list[tuple[int, int]] = [maze.entry_point]
+    visited: set[tuple[int, int]] = {maze.entry_point}
+    path: dict[tuple[int, int],
+               tuple[int, int] | None] = {maze.entry_point: None}
+    read_index: int = 0
+
+    while read_index < len(queue):
+        current_x, current_y = queue[read_index]
+        read_index += 1
+
+        if (current_x, current_y) == maze.exit_point:
+            break
+        cell_wall = maze.walls[current_y][current_x]
+        
 
