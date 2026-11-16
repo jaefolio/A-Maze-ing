@@ -1,4 +1,4 @@
-from maze import Maze, NORTH, EAST, SOUTH, WEST, ALL_WALLS
+from .maze import Maze, NORTH, EAST, SOUTH, WEST, ALL_WALLS
 
 Cell = tuple[int, int]
 
@@ -138,5 +138,108 @@ def validate_walls(maze: Maze) -> bool:
             if (x, y) in maze.blocked:
                 if walls != ALL_WALLS:
                     return False
+
+    return True
+
+
+def has_open_3x3(maze: Maze) -> bool:
+    for y in range(maze.height - 2):
+        for x in range(maze.width - 2):
+
+            if (x, y) in maze.blocked:
+                continue
+
+            fully_open = True
+
+            for dy in range(3):
+                for dx in range(3):
+
+                    walls = maze.walls[y + dy][x + dx]
+
+                    east_closed = dx < 2 and bool(walls & EAST)
+                    south_closed = dy < 2 and bool(walls & SOUTH)
+
+                    if east_closed or south_closed:
+                        fully_open = False
+
+            if fully_open:
+                return True
+    return False
+
+
+def count_dead_ends(maze: Maze) -> int:
+    count = 0
+
+    for y in range(maze.height):
+        for x in range(maze.width):
+            if (x, y) in maze.blocked:
+                continue
+
+            neighbours = get_accessible_neighbours(maze, (x, y))
+
+            if len(neighbours) == 1:
+                count += 1
+
+    return count
+
+
+def validate_key_cells(maze: Maze) -> bool:
+    width = maze.width
+    height = maze.height
+
+    corners = {
+        (0, 0),
+        (width - 1, 0),
+        (0, height - 1),
+        (width - 1, height - 1)
+    }
+
+    for corner in corners:
+        if corner in maze.blocked:
+            return False
+
+    center_x = {width // 2}
+    center_y = {height // 2}
+
+    if width % 2 == 0:
+        center_x.add(width // 2 - 1)
+
+    if height % 2 == 0:
+        center_y.add(height // 2 - 1)
+
+    center_cells = {
+        (x, y)
+        for x in center_x
+        for y in center_y
+    }
+
+    if all(cell in maze.blocked for cell in center_cells):
+        return False
+
+    return True
+
+
+def validate_non_perfect(maze: Maze) -> bool:
+    if not validate_walls(maze):
+        return False
+
+    if not is_connected(maze):
+        return False
+
+    if has_open_3x3(maze):
+        return False
+
+    if not validate_key_cells(maze):
+        return False
+
+    total_cells = maze.width * maze.height
+    walkable_cells = total_cells - len(maze.blocked)
+    cycles = count_passages(maze) - walkable_cells + 1
+
+    if cycles < 2:
+        return False
+
+    if count_dead_ends(maze) > 2:
+        return False
 
     return True
