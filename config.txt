@@ -15,7 +15,7 @@ EXIT= 19,14
 
 # Output settings
 OUTPUT_FILE=maze.txt
-PERFECT=False
+PERFECT=True
 
 # ==========================================
 # Optional/Garbage values the user might add

@@ -1,0 +1,5 @@
+__pycache__
+maze_analyzer.py
+.venv
+config.txt
+maze.txt

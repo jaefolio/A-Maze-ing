@@ -157,7 +157,10 @@ class MazeGenerator:
             if perfect:
                 return maze
 
-            self._add_loops(maze)
+            try:
+                self._add_loops(maze)
+            except ValueError:
+                continue
 
             if validator.validate_non_perfect(maze):
                 return maze

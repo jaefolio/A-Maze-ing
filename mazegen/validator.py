@@ -107,13 +107,15 @@ def validate_walls(maze: Maze) -> bool:
     if any(len(row) != maze.width for row in maze.walls):
         return False
 
+    for row in maze.walls:
+        for walls in row:
+            if type(walls) is not int or not 0 <= walls <= 15:
+                return False
+
     for y in range(maze.height):
         for x in range(maze.width):
 
             walls = maze.walls[y][x]
-
-            if type(walls) is not int or not 0 <= walls <= 15:
-                return False
 
             if x + 1 < maze.width:
                 east_closed = bool(walls & EAST)

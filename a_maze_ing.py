@@ -2,6 +2,7 @@ from config_parser import parse_config
 from mazegen.generator import MazeGenerator
 from mazegen.solver import solve_maze
 from pydantic import ValidationError
+from pathlib import Path
 import sys  # for sys.exit
 import typing
 
@@ -14,6 +15,11 @@ def main() -> None:
     data: dict[str, typing.Any]
     try:
         data = parse_config(sys.argv[1])
+
+        output = Path(data["OUTPUT_FILE"])
+        if output.exists() and output.samefile(sys.argv[1]):
+            raise ValueError("Output file cannot be the input configs")
+
         maze = MazeGenerator(
             data["WIDTH"], data["HEIGHT"], data["SEED"]
         ).generate(
