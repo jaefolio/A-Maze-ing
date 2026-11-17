@@ -1,4 +1,5 @@
 from config_parser import parse_config
+from mazegen.generator import MazeGenerator
 from mazegen.solver import solve_maze
 from pydantic import ValidationError
 import sys  # for sys.exit
@@ -6,12 +7,43 @@ import typing
 
 
 def main() -> None:
+    if len(sys.argv) != 2:
+        print("Usage: python3 a_maze_ing.py <config_file>")
+        sys.exit(1)
+
     data: dict[str, typing.Any]
     try:
-        data = parse_config("config.txt")
+        data = parse_config(sys.argv[1])
+        maze = MazeGenerator(
+            data["WIDTH"], data["HEIGHT"], data["SEED"]
+        ).generate(
+            perfect=data["PERFECT"],
+            entry=data["ENTRY"],
+            exit=data["EXIT"],
+        )
+        path = solve_maze(maze)
+        if not path:
+            raise ValueError("No path from entry to exit")
+
+        directions = {
+            (0, -1): "N", (1, 0): "E",
+            (0, 1): "S", (-1, 0): "W",
+        }
+        path_string = "".join(
+            directions[(x2 - x1, y2 - y1)]
+            for (x1, y1), (x2, y2) in zip(path, path[1:])
+        )
+        with open(data["OUTPUT_FILE"], "w", encoding="utf-8") as file:
+            for row in maze.walls:
+                file.write("".join(f"{walls:X}" for walls in row) + "\n")
+            file.write("\n")
+            file.write(f"{maze.entry_point[0]},{maze.entry_point[1]}\n")
+            file.write(f"{maze.exit_point[0]},{maze.exit_point[1]}\n")
+            file.write(path_string + "\n")
+        print(f"Maze saved to {data['OUTPUT_FILE']}")
     except ValidationError as e:
         for error in e.errors():
-            print(f"Error: {error["msg"]}")
+            print(f"Error: {error['msg']}")
         sys.exit(1)
     except FileNotFoundError as e:
         print(f"Wrong file name? {e}")
@@ -19,21 +51,6 @@ def main() -> None:
     except Exception as e:
         print(f"Unknown error occured: {e}")
         sys.exit(1)
-
-    #  Generate Maze and pass to validation
-    #  here ------------------------------------------
-
-    # Solver
-    # solve_maze(maze)
-
-    
-    # EXPORT
-    # Write the hexadecimal grid, the start/end points, and the path_string to the output file
-    # export_to_file(maze, path_string, config.OUTPUT_FILE)
-
-    
-
-    
 
 
 if __name__ == "__main__":

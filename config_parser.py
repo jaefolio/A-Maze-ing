@@ -1,5 +1,5 @@
 from pydantic import (
-	BaseModel,
+    BaseModel,
     field_validator,
     model_validator
 )
@@ -13,7 +13,7 @@ class MazeValidation(BaseModel):
     EXIT: tuple[int, int]
     OUTPUT_FILE: str
     PERFECT: bool
-    SEED: int | None
+    SEED: int | None = None
 
     @field_validator('ENTRY', 'EXIT', mode='before')
     @classmethod
@@ -27,10 +27,9 @@ class MazeValidation(BaseModel):
 
     @model_validator(mode='after')
     def validate_maze(self) -> 'MazeValidation':
-        if self.WIDTH < 5 or self.HEIGHT < 5:
+        if self.WIDTH <= 0 or self.HEIGHT <= 0:
             raise ValueError(
-                "Maze dimensions must be at least 5x5 "
-                "to allow for walls and patterns"
+                "Maze dimensions must be positive"
             )
         if not (0 <= self.ENTRY[0] < self.WIDTH and
                 0 <= self.ENTRY[1] < self.HEIGHT):
@@ -49,16 +48,15 @@ class MazeValidation(BaseModel):
         return self
 
 
-def parse_config(filename: str) -> dict[str, str]:
+def parse_config(filename: str) -> dict[str, typing.Any]:
     items: dict[str, typing.Any] = {}
-    item_list: list[str]
 
     with open(filename, 'r') as file:
-        for line in file:
+        for number, line in enumerate(file, start=1):
             if line.lstrip().startswith('#') or not line.lstrip():
                 continue
-            item_list = line.split('=')
-            item_list = [item.strip() for item in item_list]
-            items.update(([(item_list[0], item_list[1])]))
-    MazeValidation(**items)
-    return items
+            key, separator, value = line.partition('=')
+            if not separator or not key.strip():
+                raise ValueError(f"Line {number}: expected KEY=VALUE")
+            items[key.strip()] = value.strip()
+    return MazeValidation(**items).model_dump()
