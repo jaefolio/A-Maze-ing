@@ -1,6 +1,7 @@
 from config_parser import parse_config
 from mazegen.generator import MazeGenerator
 from mazegen.solver import solve_maze
+from maze_ui import generate_maze, parse_maze
 from pydantic import ValidationError
 from pathlib import Path
 import sys  # for sys.exit
@@ -52,12 +53,18 @@ def main() -> None:
             print(f"Error: {error['msg']}")
         sys.exit(1)
     except FileNotFoundError as e:
-        print(f"Wrong file name? {e}")
+        print(f"Invalid file name: {e}")
         sys.exit(1)
     except Exception as e:
         print(f"Unknown error occured: {e}")
         sys.exit(1)
 
+    try:
+        print(*parse_maze(data["OUTPUT_FILE"]))
+        generate_maze(*parse_maze(data["OUTPUT_FILE"]))
+    except Exception as e:
+        print(f"Display error: {e}")
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()
