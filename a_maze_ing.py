@@ -4,9 +4,11 @@ from mazegen.solver import solve_maze
 from maze_ui import generate_maze, parse_maze
 from pydantic import ValidationError
 from pathlib import Path
+import os
 import sys  # for sys.exit
 import typing
 
+os.environ.setdefault("XCURSOR_SIZE", '24')
 
 def main() -> None:
     if len(sys.argv) != 2:
@@ -60,7 +62,6 @@ def main() -> None:
         sys.exit(1)
 
     try:
-        print(*parse_maze(data["OUTPUT_FILE"]))
         generate_maze(*parse_maze(data["OUTPUT_FILE"]))
     except Exception as e:
         print(f"Display error: {e}")
