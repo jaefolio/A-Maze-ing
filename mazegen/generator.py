@@ -1,7 +1,7 @@
 import random
 from .maze import Maze, EAST, SOUTH
 from . import validator
-
+from collections.abc import Callable
 
 Cell = tuple[int, int]
 
@@ -109,7 +109,10 @@ class MazeGenerator:
             algorithm: str = "origin_shift",
             perfect: bool = False,
             entry: Cell = (0, 0),
-            exit: Cell | None = None
+            exit: Cell | None = None,
+            on_step: Callable[
+                [dict[Cell, Cell | None], Cell], None
+            ] | None = None
     ) -> Maze:
         blocked = self._create_42_pattern()
 
@@ -136,12 +139,18 @@ class MazeGenerator:
             if algorithm == "origin_shift":
                 parent, root = self._build_initial_tree(blocked)
 
+                if on_step is not None:
+                    on_step(parent, root)
+
                 iterations: int = self.width * self.height * 10
                 for _ in range(iterations):
                     root = self._shift_origin(parent, root)
 
+                    if on_step is not None:
+                        on_step(parent, root)
+
             else:
-                parent, root = self._build_dfs_tree(blocked)
+                parent, root = self._build_dfs_tree(blocked, on_step)
 
             maze = Maze(
                 width=self.width,
@@ -192,12 +201,18 @@ class MazeGenerator:
     def _build_dfs_tree(
         self,
         blocked: set[Cell],
+        on_step: Callable[
+                [dict[Cell, Cell | None], Cell], None
+        ] | None = None
     ) -> tuple[dict[Cell, Cell | None], Cell]:
 
         root: Cell = (self.width - 1), (self.height - 1)
 
         parent: dict[Cell, Cell | None] = {root: None}
         stack: list[Cell] = [root]
+
+        if on_step is not None:
+            on_step(parent, root)
 
         while stack:
             x, y = stack[-1]
@@ -221,8 +236,15 @@ class MazeGenerator:
 
                 parent[new_cell] = (x, y)
                 stack.append(new_cell)
+
+                if on_step is not None:
+                    on_step(parent, new_cell)
             else:
                 stack.pop()
+
+                # ANIMATION: there is no current cell after the last pop.
+                if on_step is not None and stack:
+                    on_step(parent, stack[-1])
 
         walkable_cells = self.width * self.height - len(blocked)
 

@@ -1,7 +1,7 @@
 from config_parser import parse_config
 from mazegen.generator import MazeGenerator
 from mazegen.solver import solve_maze
-from maze_ui import generate_maze, parse_maze
+from maze_ui import AnimationFrames, generate_maze, parse_maze
 from pydantic import ValidationError
 from pathlib import Path
 import os
@@ -9,6 +9,7 @@ import sys  # for sys.exit
 import typing
 
 os.environ.setdefault("XCURSOR_SIZE", '24')
+
 
 def main() -> None:
     if len(sys.argv) != 2:
@@ -23,12 +24,16 @@ def main() -> None:
         if output.exists() and output.samefile(sys.argv[1]):
             raise ValueError("Output file cannot be the input configs")
 
+        # ANIMATION: record callback states while normal generation runs.
+        animation = AnimationFrames()
         maze = MazeGenerator(
             data["WIDTH"], data["HEIGHT"], data["SEED"]
         ).generate(
+            algorithm=data["ALGORITHM"],
             perfect=data["PERFECT"],
             entry=data["ENTRY"],
             exit=data["EXIT"],
+            on_step=animation.record_step,
         )
         path = solve_maze(maze)
         if not path:
@@ -62,10 +67,12 @@ def main() -> None:
         sys.exit(1)
 
     try:
-        generate_maze(*parse_maze(data["OUTPUT_FILE"]))
+        # ANIMATION: MLX replays the states, then shows the exported result.
+        generate_maze(*parse_maze(data["OUTPUT_FILE"]), animation=animation)
     except Exception as e:
         print(f"Display error: {e}")
         sys.exit(1)
+
 
 if __name__ == "__main__":
     main()

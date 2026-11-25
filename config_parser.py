@@ -14,6 +14,8 @@ class MazeValidation(BaseModel):
     OUTPUT_FILE: str
     PERFECT: bool
     SEED: int | None = None
+    # ANIMATION: select which generator's steps the MLX viewer will replay.
+    ALGORITHM: typing.Literal["origin_shift", "dfs"] = "origin_shift"
 
     @field_validator('ENTRY', 'EXIT', mode='before')
     @classmethod
