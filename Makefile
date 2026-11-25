@@ -1,4 +1,4 @@
-.PHONY: install run debug clean lint lint-strict
+.PHONY: install run debug clean fclean lint lint-strict 
 
 install: .venv/bin/python
 	.venv/bin/python -m pip install "pydantic>=2,<3" flake8 mypy
@@ -15,6 +15,9 @@ debug: .venv/bin/python
 
 clean:
 	rm -rf __pycache__ mazegen/__pycache__ .mypy_cache
+
+fclean: clean
+	rm -rf .venv
 
 lint: .venv/bin/python
 	.venv/bin/python -m flake8 . --extend-exclude=.venv
