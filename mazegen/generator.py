@@ -1,3 +1,5 @@
+"""Generate seeded mazes with origin shifting or randomized DFS."""
+
 import random
 from .maze import Maze, EAST, SOUTH
 from . import validator
@@ -22,13 +24,29 @@ directions = [
 
 
 class MazeGenerator:
+    """Build perfect trees or connected mazes with additional loops.
+
+    Random state belongs to the instance and advances on each generation.
+    Fresh instances with the same seed and calls produce the same mazes.
+    The generator has no dependency on a renderer or output file format.
+    """
+
     def __init__(
         self,
         width: int,
         height: int,
         seed: int | None
     ) -> None:
+        """Initialize dimensions and an independent random number generator.
 
+        Args:
+            width: Positive number of columns.
+            height: Positive number of rows.
+            seed: Seed for reproducibility, or None for automatic seeding.
+
+        Raises:
+            ValueError: Either dimension is zero or negative.
+        """
         if width <= 0 or height <= 0:
             raise ValueError("Maze dimensions must be positive")
         self.width = width
@@ -39,7 +57,22 @@ class MazeGenerator:
         self,
         blocked: set[Cell],
     ) -> tuple[dict[Cell, Cell | None], Cell]:
+        """Build the deterministic starting tree used by origin shifting.
 
+        Args:
+            blocked: Coordinates to exclude from the tree. The bottom-right
+                root must be walkable.
+
+        Returns:
+            A parent map and its bottom-right root. The root maps to None;
+            every other discovered cell maps to an adjacent parent.
+
+        Raises:
+            ValueError: Not all walkable cells can be reached from the root.
+
+        Neighbours are discovered in north, east, south, west order and
+        added to a last-in, first-out stack. No random choices are made.
+        """
         root: Cell = (self.width - 1, self.height - 1)
 
         parent: dict[Cell, Cell | None] = {root: None}
@@ -73,6 +106,19 @@ class MazeGenerator:
         parent: dict[Cell, Cell | None],
         root: Cell,
     ) -> Cell:
+        """Move the root to a random adjacent cell in the parent map.
+
+        Args:
+            parent: Mutable tree map with parent[root] equal to None.
+            root: Current root coordinates.
+
+        Returns:
+            The new root, or the existing root if it has no neighbours.
+
+        The old root points to the new root, whose parent becomes None.
+        The map is modified in place; a move along an existing tree edge
+        changes its orientation without changing the undirected passage.
+        """
         x, y = root
 
         neighbours: list[Cell] = []
@@ -99,7 +145,18 @@ class MazeGenerator:
         maze: Maze,
         parent: dict[Cell, Cell | None],
     ) -> None:
+        """Open every parent-child connection in the supplied maze.
 
+        Args:
+            maze: Mutable maze whose tree passages are to be opened.
+            parent: Mapping from cells to adjacent parents, with None at
+                the root. Connections must avoid blocked cells.
+
+        Raises:
+            ValueError: A connection is rejected by Maze.open_between().
+
+        Existing passages remain open; this method does not reset walls.
+        """
         for cell, parent_cell in parent.items():
             if parent_cell is not None:
                 maze.open_between(cell, parent_cell)
@@ -114,6 +171,34 @@ class MazeGenerator:
                 [dict[Cell, Cell | None], Cell], None
             ] | None = None
     ) -> Maze:
+        """Generate a maze using the requested algorithm and topology.
+
+        Args:
+            algorithm: Either "origin_shift" or "dfs".
+            perfect: If True, return a spanning tree. Otherwise, add loops
+                and validate connectivity, key cells, open areas, and dead
+                ends, retrying up to 100 generation attempts.
+            entry: Entry coordinates as an (x, y) tuple.
+            exit: Exit coordinates, defaulting to the bottom-right cell.
+            on_step: Optional callback receiving the live parent map and
+                highlighted cell. Origin shifting reports the initial tree
+                and each root move. DFS reports its initial cell, each
+                discovery, and backtracking while the stack is nonempty.
+
+        Returns:
+            A Maze with closed exterior walls and the requested endpoints.
+
+        Raises:
+            ValueError: Endpoints are invalid, equal, or blocked; the
+                algorithm is unknown; walkable cells are disconnected;
+                or no valid non-perfect maze is found in 100 attempts.
+
+        The 42 pattern is omitted with a warning when it cannot fit.
+        Callbacks must not mutate the parent map and must copy it to retain
+        snapshots. Retries supply a fresh parent map. Loop additions are
+        not reported, so the returned maze is the final result. Callback
+        exceptions propagate to the caller.
+        """
         blocked = self._create_42_pattern()
 
         if exit is None:
@@ -177,6 +262,12 @@ class MazeGenerator:
         raise ValueError("Failed to generate a valid non-perfect maze")
 
     def _create_42_pattern(self) -> set[Cell]:
+        """Return the centered 42 pattern's blocked coordinates.
+
+        Grids narrower than 9 columns or shorter than 7 rows cannot hold
+        the pattern with its surrounding corridor. For those grids, print
+        a warning and return an empty set.
+        """
         blocked: set[Cell] = set()
 
         if self.width < 9 or self.height < 7:
@@ -205,7 +296,22 @@ class MazeGenerator:
                 [dict[Cell, Cell | None], Cell], None
         ] | None = None
     ) -> tuple[dict[Cell, Cell | None], Cell]:
+        """Build a randomized depth-first tree from the bottom-right cell.
 
+        Args:
+            blocked: Coordinates to exclude; the root must be walkable.
+            on_step: Optional callback receiving the live parent map and
+                active cell on initialization, discovery, and backtracking.
+                Copy the map to retain it; callbacks must not mutate it.
+
+        Returns:
+            A parent map and its root, which maps to None.
+
+        Raises:
+            ValueError: The root cannot reach every walkable cell.
+
+        Uses an explicit stack and the instance's random generator.
+        """
         root: Cell = (self.width - 1), (self.height - 1)
 
         parent: dict[Cell, Cell | None] = {root: None}
@@ -254,6 +360,19 @@ class MazeGenerator:
         return parent, root
 
     def _add_loops(self, maze: Maze) -> None:
+        """Try to add cycles and reduce dead ends by opening shared walls.
+
+        Args:
+            maze: Connected tree maze to modify in place.
+
+        Raises:
+            ValueError: Candidate processing cannot establish two cycles.
+
+        Closed walls between walkable cells are tried in shuffled order.
+        Changes that create an open 3x3 area are rolled back. This helper
+        does not guarantee all non-perfect requirements; generate() checks
+        the result with validate_non_perfect() and retries when necessary.
+        """
         candidates: list[tuple[Cell, Cell]] = []
 
         for y in range(self.height):

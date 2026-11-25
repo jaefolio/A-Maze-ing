@@ -1,3 +1,5 @@
+"""Inspect wall consistency, connectivity, passages, and maze topology."""
+
 from .maze import Maze, NORTH, EAST, SOUTH, WEST, ALL_WALLS
 
 Cell = tuple[int, int]
@@ -7,7 +9,19 @@ def get_accessible_neighbours(
     maze: Maze,
     cell: Cell,
 ) -> list[Cell]:
+    """Return adjacent walkable cells with a passage open on both sides.
 
+    Args:
+        maze: Maze with a well-formed wall grid.
+        cell: Coordinates to inspect as an (x, y) tuple.
+
+    Returns:
+        Accessible cells in north, east, south, west order. Blocked cells
+        have no accessible neighbours.
+
+    Raises:
+        ValueError: The supplied coordinates are outside the maze.
+    """
     x, y = cell
 
     directions = [
@@ -43,6 +57,17 @@ def get_accessible_neighbours(
 
 
 def is_connected(maze: Maze) -> bool:
+    """Check whether every walkable cell can be reached from the entry.
+
+    Args:
+        maze: Maze with valid walls and a walkable, in-bounds entry.
+
+    Returns:
+        True when traversal from the entry visits every non-blocked cell.
+
+    Wall structure and endpoint validity are assumed, not checked here.
+    The maze is not modified.
+    """
     start = maze.entry_point
 
     stack: list[Cell] = [start]   # discovered cells needed to be explored
@@ -64,6 +89,15 @@ def is_connected(maze: Maze) -> bool:
 
 
 def count_passages(maze: Maze) -> int:
+    """Count passages between non-blocked cells once per shared boundary.
+
+    Args:
+        maze: Maze with coherent neighbouring wall values.
+
+    Returns:
+        Number of open internal passages. Only east and south boundaries
+        are inspected so each passage is counted once.
+    """
     passages: int = 0
 
     for y in range(maze.height):
@@ -85,6 +119,16 @@ def count_passages(maze: Maze) -> int:
 
 
 def is_perfect(maze: Maze) -> bool:
+    """Check that the maze's walkable graph is a valid spanning tree.
+
+    Args:
+        maze: Maze with valid entry coordinates and blocked-cell metadata.
+
+    Returns:
+        True if walls are valid, all walkable cells are connected, and the
+        passage count equals the walkable-cell count minus one. Together,
+        these conditions mean there are no cycles.
+    """
     if not validate_walls(maze):
         return False
 
@@ -98,6 +142,18 @@ def is_perfect(maze: Maze) -> bool:
 
 
 def validate_walls(maze: Maze) -> bool:
+    """Check grid shape, wall values, shared boundaries, and blocked cells.
+
+    Args:
+        maze: Maze whose wall representation is to be checked.
+
+    Returns:
+        True if dimensions are positive, the grid matches those dimensions,
+        every wall value is an integer from 0 to 15, shared walls agree,
+        exterior walls are closed, and blocked cells are fully closed.
+
+    Connectivity, endpoints, and blocked-coordinate bounds are not checked.
+    """
     if maze.width <= 0 or maze.height <= 0:
         return False
 
@@ -145,6 +201,15 @@ def validate_walls(maze: Maze) -> bool:
 
 
 def has_open_3x3(maze: Maze) -> bool:
+    """Detect a 3x3 area with every internal shared wall open.
+
+    Args:
+        maze: Maze with a valid, coherent wall grid.
+
+    Returns:
+        True if any 3x3 window has all twelve internal passages open.
+        Walls around the outside of the window do not affect the result.
+    """
     for y in range(maze.height - 2):
         for x in range(maze.width - 2):
 
@@ -170,6 +235,16 @@ def has_open_3x3(maze: Maze) -> bool:
 
 
 def count_dead_ends(maze: Maze) -> int:
+    """Count walkable cells with exactly one accessible neighbour.
+
+    Args:
+        maze: Maze with a valid wall grid and blocked-cell metadata.
+
+    Returns:
+        Number of degree-one cells, including dead ends whose other
+        adjacent cells are blocked or outside the grid. Isolated cells
+        have degree zero and are not counted as dead ends here.
+    """
     count = 0
 
     for y in range(maze.height):
@@ -186,6 +261,18 @@ def count_dead_ends(maze: Maze) -> int:
 
 
 def validate_key_cells(maze: Maze) -> bool:
+    """Check that corners and at least one central cell are not blocked.
+
+    Args:
+        maze: Maze with positive dimensions and blocked-cell metadata.
+
+    Returns:
+        True if all corners are unblocked and at least one central cell
+        is unblocked. Even dimensions produce two central indices along
+        that axis, giving two or four candidate central cells.
+
+    This checks blocked-set membership, not passages or connectivity.
+    """
     width = maze.width
     height = maze.height
 
@@ -222,6 +309,19 @@ def validate_key_cells(maze: Maze) -> bool:
 
 
 def validate_non_perfect(maze: Maze) -> bool:
+    """Check the connected, looped layout required for non-perfect mode.
+
+    Args:
+        maze: Maze with valid endpoints and blocked-cell metadata.
+
+    Returns:
+        True if walls are valid, walkable cells are connected, there is no
+        open 3x3 area, key cells are available, there are at least two
+        independent cycles, and there are no more than two dead ends.
+
+    For a connected maze, independent cycles equal passages minus
+    walkable cells plus one. This function does not modify the maze.
+    """
     if not validate_walls(maze):
         return False
 

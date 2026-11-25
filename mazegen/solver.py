@@ -1,8 +1,23 @@
+"""Find shortest paths through a maze using breadth-first search."""
+
 from .maze import Maze
 from .validator import get_accessible_neighbours
 
 
 def solve_maze(maze: Maze) -> list[tuple[int, int]]:
+    """Find a shortest route from the maze's entry to its exit.
+
+    Args:
+        maze: Maze with a well-formed wall grid and valid endpoints.
+
+    Returns:
+        Coordinates in traversal order, including both endpoints, or an
+        empty list if the exit cannot be reached. Equally short routes are
+        resolved using north, east, south, west neighbour order.
+
+    The maze is not modified. Passages must be open on both sides, and
+    blocked cells are excluded by get_accessible_neighbours().
+    """
     queue: list[tuple[int, int]] = [maze.entry_point]
     visited: set[tuple[int, int]] = {maze.entry_point}
     path: dict[tuple[int, int],

@@ -1,3 +1,5 @@
+"""Represent maze cells as four wall bits and open shared passages."""
+
 from dataclasses import dataclass
 
 NORTH = 1       # 0001
@@ -9,6 +11,20 @@ ALL_WALLS = 15  # 1111
 
 @dataclass
 class Maze:
+    """Store maze geometry, walls, endpoints, and blocked pattern cells.
+
+    Attributes:
+        width: Number of columns.
+        height: Number of rows.
+        entry_point: Entry coordinates as an (x, y) tuple.
+        exit_point: Exit coordinates as an (x, y) tuple.
+        walls: Row-major grid, accessed as walls[y][x]. Set bits represent
+            closed walls: north=1, east=2, south=4, and west=8.
+        blocked: Coordinates excluded from traversal, normally the 42 pattern.
+
+    Construction stores the supplied data without validating it.
+    """
+
     width: int
     height: int
     entry_point: tuple[int, int]
@@ -21,7 +37,19 @@ class Maze:
         cell1: tuple[int, int],
         cell2: tuple[int, int],
     ) -> None:
+        """Open the shared wall between two adjacent, walkable cells.
 
+        Both cells' wall values are modified in place. Opening an already
+        open passage leaves it open.
+
+        Args:
+            cell1: First cell's (x, y) coordinates.
+            cell2: Second cell's (x, y) coordinates.
+
+        Raises:
+            ValueError: A cell is outside the maze, the cells are not
+                orthogonally adjacent, or either cell is blocked.
+        """
         x1, y1 = cell1
         x2, y2 = cell2
 
