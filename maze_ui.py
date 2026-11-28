@@ -1,4 +1,4 @@
-from mlx import Mlx  # type: ignore
+from mlx import Mlx
 
 
 NORTH = 1 << 0  # 1 (0001)
