@@ -1,4 +1,4 @@
-from mlx import Mlx  # type: ignore
+from mlx import Mlx
 from dataclasses import dataclass
 from typing import Any
 from mazegen.generator import MazeGenerator

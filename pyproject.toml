@@ -5,12 +5,12 @@ description = "Reusable maze generation and solving"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = []
-licence = "MIT"
+license = "MIT"
 license-files = ["LICENSE.md"]
 
 [build-system]
 requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
-[tools.setuptools]
+[tool.setuptools]
 packages = ["mazegen"]
