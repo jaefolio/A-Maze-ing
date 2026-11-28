@@ -64,7 +64,7 @@ def main() -> None:
         sys.exit(1)
 
     try:
-        generate_maze(*parse_maze(data["OUTPUT_FILE"]))
+        generate_maze(*parse_maze(data["OUTPUT_FILE"]), data)
     except Exception as e:
         print(f"Display error: {e}")
         sys.exit(1)
