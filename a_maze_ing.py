@@ -1,7 +1,7 @@
 from config_parser import parse_config
 from mazegen.generator import MazeGenerator
 from mazegen.solver import solve_maze
-from maze_ui import generate_maze, parse_maze
+from render import generate_maze, parse_maze
 from pydantic import ValidationError
 from pathlib import Path
 import os

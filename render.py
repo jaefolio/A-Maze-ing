@@ -130,7 +130,7 @@ def draw_walls(
     rows = len(maze.grid)
     cols = len(maze.grid[0])
     color = maze.wall_color
-    print(color)
+
     for y in range(rows):
         for x in range(cols):
             cell = maze.grid[y][x]
@@ -192,24 +192,25 @@ def draw_maze(maze: MazeState) -> None:
     # inner = max(1, tile - pad * 2)
 
     # path coloring
-    for step in maze.path_str:
-        direction_x, direction_y = moves[step]
-        next_x = current_x + direction_x
-        next_y = current_y + direction_y
-        x1 = offset_x + current_x * tile + margin
-        y1 = offset_y + current_y * tile + margin
-        x2 = offset_x + next_x * tile + margin
-        y2 = offset_y + next_y * tile + margin
+    if maze.show_path is True:
+        for step in maze.path_str:
+            direction_x, direction_y = moves[step]
+            next_x = current_x + direction_x
+            next_y = current_y + direction_y
+            x1 = offset_x + current_x * tile + margin
+            y1 = offset_y + current_y * tile + margin
+            x2 = offset_x + next_x * tile + margin
+            y2 = offset_y + next_y * tile + margin
 
-        x = min(x1, x2)
-        y = min(y1, y2)
-        w = abs(x2 - x1) + line_t
-        h = abs(y2 - y1) + line_t
+            x = min(x1, x2)
+            y = min(y1, y2)
+            w = abs(x2 - x1) + line_t
+            h = abs(y2 - y1) + line_t
 
-        draw_block(maze.buf, maze.size_line, maze.bpp,
-                   x, y, w, h, COLOR_PATH)
-        current_x = next_x
-        current_y = next_y
+            draw_block(maze.buf, maze.size_line, maze.bpp,
+                    x, y, w, h, COLOR_PATH)
+            current_x = next_x
+            current_y = next_y
 
     # starting coords
     draw_block(
@@ -237,12 +238,6 @@ def on_close(param: tuple[Mlx, int]) -> int:
 
 
 def on_key(keycode: int, maze: MazeState) -> int:
-    """
-    Based on key pressed from numbers within 1 - 5,
-    handles its respective events from regenerating the maze
-    to changing the wall color of the maze
-    
-    """
     if keycode == KEY_1:
         new_seed: int = random.randint(0, 2**32 - 1)
         grid, start, exit, path_str = rebuild_maze(maze.data, new_seed)
@@ -255,9 +250,13 @@ def on_key(keycode: int, maze: MazeState) -> int:
             maze.mlx_ptr, maze.mlx_window, maze.img_ptr, 0, 0
         )
         maze.m.mlx_do_sync(maze.mlx_ptr)
-
     if keycode == KEY_2:
-        pass
+        maze.show_path = not maze.show_path
+        print(maze.show_path)
+        draw_maze(maze)
+        maze.m.mlx_put_image_to_window(
+            maze.mlx_ptr, maze.mlx_window, maze.img_ptr, 0, 0
+        )
     if keycode == KEY_3:
         r = random.randint(100, 255)
         g = random.randint(100, 255)
